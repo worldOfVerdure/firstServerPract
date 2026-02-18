@@ -1,0 +1,77 @@
+import fs from 'fs';
+import http from 'http';
+
+const server = http.createServer((req, res) => {
+  const url = req.url;
+  const method = req.method;
+  if (url === '/') {
+    res.setHeader('Content-Type', 'text/html');
+    res.write('<html>');
+    res.write('<head><title>Enter Message</title></head>');
+    //action is the url to which the form data will be sent when the form is submitted. Post is the
+    //method of sending the form data. It can be either GET or POST. GET appends the form data to
+    //the URL, while POST sends the form data in the body of the request. The <input> name attribute
+    //is used to specify the name of the form data that will be sent to the server. In this case,
+    //the form data will be sent as "message".
+    res.write('<body><form action="/message" method="POST"><input type="text" name="message"><button>Send</button></form></body>');
+    res.write('</html>');
+    return res.end();
+  }
+  if (url === '/message' && method === 'POST') {
+    fs.writeFileSync('message.txt', 'Lorem ipsum');
+    //Allows us to write meta info in one go. Passing a status code of 302 means that the resource
+    //has been temporarily moved to a different URL. The browser will automatically redirect to the
+    //new URL specified in the Location header. In this case, we are redirecting back to the root
+    //URL ("/"). We also pass a js object with header info.
+    //res.writeHead(302, {});
+    res.statusCode = 302;
+    res.setHeader('Location', '/');
+    return res.end();
+  }
+  res.setHeader('Content-Type', 'text/html');
+  res.write('<html>');
+  res.write('<head><title>Shiny Node.ts Server</title></head>');
+  res.write('<body><h1>The shiny Node.ts server blinds me, captain.</h1></body>');
+  res.write('</html>');
+  res.end();
+});
+
+server.listen(3000);
+
+/*
+Why the 302 redirect is important:
+
+The 302 status code with Location: / performs a redirect. Without it:
+
+The browser would stay on the /message URL after submission
+The page would be blank/show nothing (because the response ends immediately)
+If the user hits refresh, the browser would warn about resubmitting the form (annoying!)
+With the redirect:
+
+The server tells the browser: "I processed your POST, now GO to / instead"
+The browser makes a fresh GET request to /, showing the form again
+If the user refreshes, it just reloads the form—no resubmit warning
+This is called the Post/Redirect/Get (PRG) pattern—a standard best practice to prevent accidental
+duplicate form submissions and provide better UX.
+
+The Location header alone doesn't trigger a redirect. Browsers only follow the Location header when
+they receive a 3xx status code (like 302, 301, 303, etc.).
+
+Without the status code:
+
+The response would have a default status of 200 OK
+The browser interprets this as "here's your successful response"
+The Location header gets ignored
+The page stays blank at /message
+With res.statusCode = 302:
+
+The browser sees "302 Found"
+It checks for a Location header
+It automatically navigates to that location (/)
+The combo is required:
+
+
+res.statusCode = 302; // "This is a redirect"res.setHeader('Location', '/'); // "Go here"
+Think of it like: the status code tells the browser what to do, and the Location header tells it
+where to go. You need both!
+*/
