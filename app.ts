@@ -29,7 +29,7 @@ const server = http.createServer((req, res) => {
       const parsedBody = Buffer.concat(body).toString() as FormUrlEncodedString;
       //const message = parsedBody.split('=')[1];
       const message = new URLSearchParams(parsedBody).get('message') ?? '';
-      fs.writeFile('message.txt', message, (err) => {
+      fs.writeFile('message.txt', message, err => {
         res.statusCode = 302;
         res.setHeader('Location', '/');
         return res.end();
